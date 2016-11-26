@@ -39,6 +39,17 @@ state_string3 = state_string3[::-1]
 
 print state_string0 + state_string1 + state_string2 + state_string3
 
+# after reversing the .jar file, we find that
+# serializedState essentially stores the hexagon in binary
+# each row is its own number
+# each row is in blocks of 2, with lowest bits representing
+#   the firstmost blocks in the hexagon
+# e.g.
+# [1][ ][2][1][2][ ] would translate to 000110010010 = 402 = 0x192
+# team 2 maps to '01'
+# team 1 maps to '10'
+# no team maps to '00'
+
 # flag: 12022020102010020122210200110012201200012000102021001020021000012010210010100002102010020210010120000120002202001200010120201020
 
 # def stateString():
