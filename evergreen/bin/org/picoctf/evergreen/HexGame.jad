@@ -1,0 +1,594 @@
+// Decompiled by Jad v1.5.8e. Copyright 2001 Pavel Kouznetsov.
+// Jad home page: http://www.geocities.com/kpdus/jad.html
+// Decompiler options: packimports(3) 
+// Source File Name:   HexGame.java
+
+package org.picoctf.evergreen;
+
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.util.*;
+import javax.imageio.ImageIO;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+
+// Referenced classes of package org.picoctf.evergreen:
+//            Draft, GameState, Hexagon, Utilities, 
+//            PNGFileFilter
+
+public class HexGame extends JFrame
+    implements MouseListener, KeyListener
+{
+
+    public static void main(String arg[])
+    {
+        new HexGame(Draft.AUBERGINE);
+    }
+
+    public HexGame(Draft d)
+    {
+        currTeam = 0;
+        board = new Hexagon[13][13];
+        numPlaces = 1;
+        justCaptured = false;
+        movingHex = null;
+        movesRemaining = 1;
+        canPlay = true;
+        eitherOr = false;
+        placeableType = 0;
+        skippedLast = new boolean[2];
+        justUndid = false;
+        numPieces = new int[2];
+        draft = d;
+        setupFileChooser();
+        initBoard();
+        addMouseListener(this);
+        addKeyListener(this);
+        setPreferredSize(new Dimension(420, 500));
+        setSize(getPreferredSize());
+        setTitle("Evergreen");
+        setResizable(false);
+        setDefaultCloseOperation(3);
+        setVisible(true);
+    }
+
+    private void initBoard()
+    {
+        if(draft.hasLimitedPieces())
+        {
+            for(int i = 0; i < 2; i++)
+                numPieces[i] = draft.numPieces;
+
+        }
+        populateGrid();
+        boardStates.push(getBoardCopy());
+        turnStates.push(new GameState(currTeam, movesRemaining, numPlaces, placeableType, eitherOr, false, Arrays.copyOf(numPieces, 2)));
+    }
+
+    private void populateGrid()
+    {
+        int h = 6;
+        int N = draft.types;
+        int count = 0;
+        int numHexesOfType[] = new int[N];
+        for(int row = 0; row < 13; row++)
+        {
+            int start = row > 6 ? row - 6 : 0;
+            int end = row > 6 ? 12 : row + 6;
+            for(int col = start; col <= end; col++)
+            {
+                board[row][col] = new Hexagon(row, col);
+                count++;
+                board[row][col].filled = false;
+                if(draft.hasMultipleTypes())
+                    if(row != 6 || col != 6)
+                    {
+                        int type;
+                        do
+                            type = rand.nextInt(N);
+                        while(numHexesOfType[type] == 127 / N);
+                        numHexesOfType[type]++;
+                        board[row][col].type = type;
+                    } else
+                    {
+                        board[row][col].type = 0;
+                    }
+            }
+
+        }
+
+        System.out.println(count);
+        if(draft.hasMultipleTypes())
+            board[6][6].type = rand.nextInt(N);
+    }
+
+    public void paint(Graphics g)
+    {
+        g.setColor(Color.white);
+        g.fillRect(0, 0, getWidth(), getHeight());
+        Hexagon ahexagon[][];
+        int j = (ahexagon = board).length;
+        for(int i = 0; i < j; i++)
+        {
+            Hexagon row[] = ahexagon[i];
+            Hexagon ahexagon1[];
+            int l = (ahexagon1 = row).length;
+            for(int k = 0; k < l; k++)
+            {
+                Hexagon hex = ahexagon1[k];
+                if(hex != null)
+                    hex.draw(g, numPlaces != 0 || !justCaptured ? placeableType : -1);
+            }
+
+        }
+
+        drawGameInfo(g);
+    }
+
+    private void drawGameInfo(Graphics g)
+    {
+        g.setColor(Color.black);
+        g.drawString((new StringBuilder("Currently player ")).append(currTeam + 1).append("'s (").append(Utilities.getColorNameForTeam(currTeam)).append(") turn").toString(), 0, 490);
+        g.drawString((new StringBuilder("either/or: ")).append(eitherOr).toString(), 320, 435);
+        g.drawString((new StringBuilder("places: ")).append(numPlaces).toString(), 290, 450);
+        g.drawString((new StringBuilder("just captured: ")).append(justCaptured).toString(), 290, 465);
+        g.drawString((new StringBuilder("moving hex: ")).append(movingHex).toString(), 290, 480);
+        g.drawString((new StringBuilder("moves: ")).append(movesRemaining).toString(), 290, 495);
+        g.drawString((new StringBuilder("Current draft: ")).append(draft.toString()).toString(), 0, 40);
+        if(draft.hasLimitedPieces())
+        {
+            for(int i = 0; i < 2; i++)
+                g.drawString((new StringBuilder("Team ")).append(i + 1).append(": ").append(numPieces[i]).toString(), 340, 40 + 15 * i);
+
+        }
+    }
+
+    private long[] serializedState()
+    {
+        long s[] = new long[4];
+        int bit = 0;
+        Hexagon ahexagon[][];
+        int j = (ahexagon = board).length;
+        for(int i = 0; i < j; i++)
+        {
+            Hexagon row[] = ahexagon[i];
+            Hexagon ahexagon1[];
+            int l = (ahexagon1 = row).length;
+            for(int k = 0; k < l; k++)
+            {
+                Hexagon hex = ahexagon1[k];
+                if(hex != null)
+                {
+                    if(hex.team == 0)
+                        s[(bit + 1) / 64] |= 1L << (bit + 1) % 64;
+                    else
+                    if(hex.team == 1)
+                        s[bit / 64] |= 1L << bit % 64;
+                    bit += 2;
+                }
+            }
+
+        }
+
+        return s;
+    }
+
+    private String stateString()
+    {
+        String s = "";
+        Hexagon ahexagon[][];
+        int j = (ahexagon = board).length;
+        for(int i = 0; i < j; i++)
+        {
+            Hexagon row[] = ahexagon[i];
+            Hexagon ahexagon1[];
+            int l = (ahexagon1 = row).length;
+            for(int k = 0; k < l; k++)
+            {
+                Hexagon hex = ahexagon1[k];
+                if(hex != null)
+                    if(hex.team == 0)
+                        s = (new StringBuilder(String.valueOf(s))).append("1").toString();
+                    else
+                    if(hex.team == 1)
+                        s = (new StringBuilder(String.valueOf(s))).append("2").toString();
+                    else
+                        s = (new StringBuilder(String.valueOf(s))).append("0").toString();
+            }
+
+        }
+
+        return s;
+    }
+
+    public void update()
+    {
+        Hexagon ahexagon[][];
+        int j = (ahexagon = board).length;
+        for(int i = 0; i < j; i++)
+        {
+            Hexagon row[] = ahexagon[i];
+            Hexagon ahexagon1[];
+            int l = (ahexagon1 = row).length;
+            for(int k = 0; k < l; k++)
+            {
+                Hexagon hex = ahexagon1[k];
+                if(hex != null && wasCaptured(hex) && hex.team != -1)
+                    handleCaptured(hex);
+            }
+
+        }
+
+        if(justCaptured && !draft.alwaysPlaceAfterCapture)
+            justCaptured = rand.nextBoolean();
+        if(draft.hasLimitedPieces() && numPieces[currTeam] <= 0)
+            justCaptured = false;
+
+        long s[] = serializedState();
+        if(s[0] == 0x60a0495842121146L &&
+           s[1] == 0x8024120912018061L &&
+           s[2] == 0x8824421240220921L &&
+           s[3] == 0x1211880604501801L)
+        {
+            System.out.println("Success! Your key is on the next line.");
+            System.out.println(stateString());
+        }
+    }
+
+    private void handleCaptured(Hexagon hex)
+    {
+        hex.filled = false;
+        hex.team = -1;
+        justCaptured = true;
+    }
+
+    public void endTurn()
+    {
+        boardStates.push(getBoardCopy());
+        currTeam = (currTeam + 1) % 2;
+        numPlaces = 1;
+        justCaptured = false;
+        movingHex = null;
+        movesRemaining = 1;
+        canPlay = true;
+        eitherOr = false;
+        handleDrafts();
+        turnStates.push(new GameState(currTeam, movesRemaining, numPlaces, placeableType, eitherOr, false, Arrays.copyOf(numPieces, 2)));
+        repaint();
+        if(!canPlay)
+            endTurn();
+    }
+
+    private void handleDrafts()
+    {
+        boolean needToSkip = false;
+        if(draft.specialState)
+        {
+            int option = rand.nextInt(6);
+            if(draft.skipOnlyOnce && skippedLast[currTeam])
+                for(; option == 1; option = rand.nextInt(6));
+            GameState s = draft.getStateForOption(option);
+            needToSkip = s.skipTurn;
+            canPlay = !needToSkip;
+            movesRemaining = s.movesRemaining;
+            numPlaces = s.numPlaces;
+            eitherOr = s.eitherOr;
+        }
+        if(draft.hasMultipleTypes())
+            placeableType = rand.nextInt(draft.types);
+        skippedLast[currTeam] = needToSkip;
+        if(draft.hasLimitedPieces() && numPieces[currTeam] <= 0)
+            numPlaces = 0;
+    }
+
+    public boolean wasCaptured(Hexagon h)
+    {
+        int row = h.row;
+        int col = h.col;
+        if(row > 0 && row < 12 && col > 0 && col < 12 && board[row - 1][col - 1] != null && board[row + 1][col + 1] != null && board[row - 1][col - 1].team == board[row + 1][col + 1].team && board[row - 1][col - 1].team != h.team && board[row - 1][col - 1].team != -1)
+            return true;
+        if(row > 0 && row < 12 && board[row - 1][col] != null && board[row + 1][col] != null && board[row - 1][col].team == board[row + 1][col].team && board[row - 1][col].team != h.team && board[row - 1][col].team != -1)
+            return true;
+        return col > 0 && col < 12 && board[row][col - 1] != null && board[row][col + 1] != null && board[row][col - 1].team == board[row][col + 1].team && board[row][col - 1].team != h.team && board[row][col - 1].team != -1;
+    }
+
+    public boolean wasCaptured(int row, int col)
+    {
+        return wasCaptured(board[row][col]);
+    }
+
+    public void mouseClicked(MouseEvent e)
+    {
+        if(!canPlay)
+            return;
+        Hexagon h = getClicked(e);
+        if(h == null)
+            return;
+        justUndid = false;
+        int r = h.row;
+        int c = h.col;
+        if(r != -1 && c != -1)
+            if(board[r][c].filled)
+            {
+                if(board[r][c].team == currTeam && movesRemaining > 0)
+                    movingHex = board[r][c];
+            } else
+            if(movingHex != null)
+            {
+                if(canMove(r, c))
+                    handleMove(r, c);
+                else
+                if(numPlaces > 0 && h.type == placeableType)
+                    handlePlace(r, c);
+            } else
+            if(numPlaces > 0 && h.type == placeableType)
+                handlePlace(r, c);
+            else
+            if(justCaptured && !moveWouldCapture(r, c))
+                handleReplace(r, c);
+        update();
+        if(eitherOr && (movesRemaining == 0 || numPlaces == 0))
+            movesRemaining = numPlaces = 0;
+        if(numPlaces == 0 && movesRemaining == 0 && !justCaptured || !canPlay)
+            endTurn();
+        repaint();
+    }
+
+    private boolean canMove(int r, int c)
+    {
+        int or = movingHex.row;
+        int oc = movingHex.col;
+        return (or - 1 == r || or == r || or + 1 == r) && (oc - 1 == c || oc == c || oc + 1 == c) && (oc - 1 != c || or + 1 != r) && (oc + 1 != c || or - 1 != r) && (oc != c || or != r);
+    }
+
+    private void handleMove(int r, int c)
+    {
+        board[r][c].filled = true;
+        board[r][c].team = currTeam;
+        if(wasCaptured(r, c))
+        {
+            board[r][c].filled = false;
+            board[r][c].team = -1;
+        } else
+        {
+            movingHex.filled = false;
+            movingHex.team = -1;
+            movingHex = null;
+            movesRemaining--;
+        }
+    }
+
+    private Hexagon getClicked(MouseEvent e)
+    {
+        Hexagon h = null;
+        int x = e.getX() - 10;
+        int y = e.getY() - 10;
+        Hexagon ahexagon[][];
+        int j = (ahexagon = board).length;
+        for(int i = 0; i < j; i++)
+        {
+            Hexagon row[] = ahexagon[i];
+            Hexagon ahexagon1[];
+            int l = (ahexagon1 = row).length;
+            for(int k = 0; k < l; k++)
+            {
+                Hexagon hex = ahexagon1[k];
+                if(hex == null)
+                    continue;
+                int distSq = (hex.x - x) * (hex.x - x) + (hex.y - y) * (hex.y - y);
+                if(distSq >= 300)
+                    continue;
+                h = hex;
+                break;
+            }
+
+            if(h != null)
+                break;
+        }
+
+        return h;
+    }
+
+    private void handlePlace(int r, int c)
+    {
+        numPlaces--;
+        board[r][c].filled = true;
+        board[r][c].team = currTeam;
+        if(wasCaptured(r, c))
+        {
+            board[r][c].filled = false;
+            board[r][c].team = -1;
+            numPlaces++;
+        } else
+        {
+            numPieces[currTeam]--;
+        }
+    }
+
+    private void handleReplace(int r, int c)
+    {
+        justCaptured = false;
+        board[r][c].filled = true;
+        board[r][c].team = currTeam;
+        if(wasCaptured(r, c))
+        {
+            board[r][c].filled = false;
+            board[r][c].team = -1;
+            justCaptured = true;
+        } else
+        {
+            canPlay = false;
+            numPieces[currTeam]--;
+        }
+    }
+
+    private boolean moveWouldCapture(int r, int c)
+    {
+        boolean filled = board[r][c].filled;
+        int team = board[r][c].team;
+        board[r][c].filled = true;
+        board[r][c].team = currTeam;
+        boolean would = false;
+        if(r > 0)
+        {
+            if(c > 0 && board[r - 1][c - 1] != null && board[r - 1][c - 1].team != currTeam && board[r - 1][c - 1].team != -1 && wasCaptured(r - 1, c - 1))
+                would = true;
+            if(board[r - 1][c] != null && board[r - 1][c].team != currTeam && board[r - 1][c].team != -1 && wasCaptured(r - 1, c))
+                would = true;
+        }
+        if(c > 0 && board[r][c - 1] != null && board[r][c - 1].team != currTeam && board[r][c - 1].team != -1 && wasCaptured(r, c - 1))
+            would = true;
+        if(r < 12)
+        {
+            if(board[r + 1][c] != null && board[r + 1][c].team != currTeam && board[r + 1][c].team != -1 && wasCaptured(r + 1, c))
+                would = true;
+            if(c < 12 && board[r + 1][c + 1] != null && board[r + 1][c + 1].team != currTeam && board[r + 1][c + 1].team != -1 && wasCaptured(r + 1, c + 1))
+                would = true;
+        }
+        if(c < 12 && board[r][c + 1] != null && board[r][c + 1].team != currTeam && board[r][c + 1].team != -1 && wasCaptured(r, c + 1))
+            would = true;
+        board[r][c].filled = filled;
+        board[r][c].team = team;
+        return would;
+    }
+
+    public void mousePressed(MouseEvent mouseevent)
+    {
+    }
+
+    public void mouseReleased(MouseEvent mouseevent)
+    {
+    }
+
+    public void mouseEntered(MouseEvent mouseevent)
+    {
+    }
+
+    public void mouseExited(MouseEvent mouseevent)
+    {
+    }
+
+    public void keyPressed(KeyEvent e)
+    {
+        switch(e.getKeyCode())
+        {
+        case 32: // ' '
+            endTurn();
+            break;
+
+        case 127: // '\177'
+            handleUndo();
+            repaint();
+            break;
+
+        case 83: // 'S'
+            handleSaveFile();
+            break;
+        }
+    }
+
+    public void keyReleased(KeyEvent keyevent)
+    {
+    }
+
+    public void keyTyped(KeyEvent keyevent)
+    {
+    }
+
+    private Hexagon[][] getBoardCopy()
+    {
+        Hexagon copy[][] = new Hexagon[13][13];
+        for(int i = 0; i < board.length; i++)
+        {
+            for(int j = 0; j < board[i].length; j++)
+                copy[i][j] = board[i][j] != null ? board[i][j].copy() : null;
+
+        }
+
+        return copy;
+    }
+
+    private void handleUndo()
+    {
+        if(justUndid)
+        {
+            boardStates.pop();
+            turnStates.pop();
+            if(boardStates.size() == 0)
+                return;
+        }
+        board = (Hexagon[][])boardStates.pop();
+        GameState lastTurnState = (GameState)turnStates.pop();
+        currTeam = lastTurnState.currTeam;
+        movesRemaining = lastTurnState.movesRemaining;
+        numPlaces = lastTurnState.numPlaces;
+        placeableType = lastTurnState.placeableType;
+        eitherOr = lastTurnState.eitherOr;
+        numPieces = Arrays.copyOf(lastTurnState.numPieces, 2);
+        justCaptured = false;
+        boardStates.push(getBoardCopy());
+        turnStates.push(lastTurnState);
+        justUndid = true;
+    }
+
+    private void setupFileChooser()
+    {
+        fc = new JFileChooser();
+        fc.setDialogTitle("Export Game");
+        fc.addChoosableFileFilter(new PNGFileFilter());
+    }
+
+    private void handleSaveFile()
+    {
+        int returnVal = fc.showSaveDialog(this);
+        if(returnVal == 0)
+        {
+            File file = fc.getSelectedFile();
+            exportGameToFile(file);
+        }
+    }
+
+    private void exportGameToFile(File f)
+    {
+        BufferedImage b = new BufferedImage(getWidth(), getHeight(), 1);
+        Graphics g = b.getGraphics();
+        paint(g);
+        b = b.getSubimage(0, 10, getWidth(), getHeight() - 10);
+        try
+        {
+            ImageIO.write(b, "png", f);
+        }
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    private static final long serialVersionUID = 0x3a59cca48d034d43L;
+    private static final int SIZE = 13;
+    public static final int NEUTRAL = -1;
+    public static final int X_OFF = 10;
+    public static final int Y_OFF = 10;
+    public static final int NUM_TEAMS = 2;
+    public static final int NUM_HEXES = 127;
+    private static final Random rand = new Random();
+    private final Draft draft;
+    private int currTeam;
+    private Hexagon board[][];
+    private int numPlaces;
+    private boolean justCaptured;
+    private Hexagon movingHex;
+    private int movesRemaining;
+    private boolean canPlay;
+    private boolean eitherOr;
+    private int placeableType;
+    private boolean skippedLast[];
+    private boolean justUndid;
+    private int numPieces[];
+    private final Stack boardStates = new Stack();
+    private final Stack turnStates = new Stack();
+    private JFileChooser fc;
+
+}

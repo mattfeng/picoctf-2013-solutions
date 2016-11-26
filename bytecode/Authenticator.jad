@@ -1,0 +1,38 @@
+// Decompiled by Jad v1.5.8e. Copyright 2001 Pavel Kouznetsov.
+// Jad home page: http://www.geocities.com/kpdus/jad.html
+// Decompiler options: packimports(3) 
+// Source File Name:   Authenticator.java
+
+import java.io.Console;
+import java.io.PrintStream;
+
+class Authenticator
+{
+
+    public Authenticator()
+    {
+    }
+
+    public static void main(String args[])
+    {
+        key = new char[10];
+        key[0] = 'P';
+        key[1] = 'L';
+        key[2] = 'L';
+        key[3] = 'n';
+        key[4] = 'Z';
+        key[5] = 'h';
+        key[6] = 'b';
+        key[7] = 'p';
+        key[8] = 'd';
+        key[9] = 'C';
+        Console console = System.console();
+        for(String s = ""; !s.equals("ThisIsth3mag1calString8741"); s = console.readLine("Enter password:", new Object[0]));
+        for(int i = 0; i < key.length; i++)
+            System.out.print(key[i]);
+
+        System.out.println("");
+    }
+
+    public static char key[];
+}

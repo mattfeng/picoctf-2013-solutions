@@ -1,0 +1,180 @@
+// Decompiled by Jad v1.5.8e. Copyright 2001 Pavel Kouznetsov.
+// Jad home page: http://www.geocities.com/kpdus/jad.html
+// Decompiler options: packimports(3) 
+// Source File Name:   Draft.java
+
+package org.picoctf.evergreen;
+
+
+// Referenced classes of package org.picoctf.evergreen:
+//            GameState
+
+public class Draft extends Enum
+{
+
+    private Draft(String s, int i, int numTypes, boolean alwaysPlaceAfterCapture, boolean specialState, boolean skipOnlyOnce, int numPieces)
+    {
+        super(s, i);
+        types = numTypes;
+        this.alwaysPlaceAfterCapture = alwaysPlaceAfterCapture;
+        this.specialState = specialState;
+        this.skipOnlyOnce = skipOnlyOnce;
+        this.numPieces = numPieces;
+    }
+
+    private Draft(String s, int i, int numTypes)
+    {
+        this(s, i, numTypes, true, false, false, -1);
+    }
+
+    private Draft(String s, int i, int numTypes, boolean alwaysPlace)
+    {
+        this(s, i, numTypes, alwaysPlace, false, false, -1);
+    }
+
+    private Draft(String s, int i, int numTypes, boolean special, boolean skipOnce)
+    {
+        this(s, i, numTypes, true, special, skipOnce, -1);
+    }
+
+    public boolean hasMultipleTypes()
+    {
+        return types > 1;
+    }
+
+    public boolean hasLimitedPieces()
+    {
+        return numPieces > 0;
+    }
+
+    public GameState getStateForOption(int option)
+    {
+        return null;
+    }
+
+    public static Draft[] values()
+    {
+        Draft adraft[];
+        int i;
+        Draft adraft1[];
+        System.arraycopy(adraft = ENUM$VALUES, 0, adraft1 = new Draft[i = adraft.length], 0, i);
+        return adraft1;
+    }
+
+    public static Draft valueOf(String s)
+    {
+        return (Draft)Enum.valueOf(org/picoctf/evergreen/Draft, s);
+    }
+
+    Draft(String s, int i, int j, boolean flag, boolean flag1, Draft draft)
+    {
+        this(s, i, j, flag, flag1);
+    }
+
+    public static final Draft AUBERGINE;
+    public static final Draft BURGUNDY;
+    public static final Draft CRIMSON;
+    public static final Draft DANDELION;
+    public static final Draft EVERGREEN;
+    public static final Draft FUCHSIA;
+    public static final Draft GOLDENROD;
+    public static final Draft HONEYDEW;
+    public static final Draft IRIS;
+    public static final Draft JASPER;
+    public final int types;
+    public final boolean alwaysPlaceAfterCapture;
+    public final boolean specialState;
+    public final boolean skipOnlyOnce;
+    public final int numPieces;
+    private static final Draft ENUM$VALUES[];
+
+    static 
+    {
+        AUBERGINE = new Draft("AUBERGINE", 0, 1);
+        BURGUNDY = new Draft("BURGUNDY", 1, 6);
+        CRIMSON = new Draft("CRIMSON", 2, 6);
+        DANDELION = new Draft("DANDELION", 3, 2);
+        EVERGREEN = new Draft("EVERGREEN", 4, 1, true, true) {
+
+            public GameState getStateForOption(int option)
+            {
+                boolean skip = false;
+                int places = 1;
+                int moves = 1;
+                switch(option)
+                {
+                case 0: // '\0'
+                    places = 2;
+                    moves = 0;
+                    break;
+
+                case 1: // '\001'
+                    skip = true;
+                    break;
+
+                case 3: // '\003'
+                    places = 0;
+                    moves = 2;
+                    break;
+                }
+                return new GameState(places, moves, false, skip);
+            }
+
+        };
+        FUCHSIA = new Draft("FUCHSIA", 5, 1, true, true) {
+
+            public GameState getStateForOption(int option)
+            {
+                boolean or = false;
+                boolean skip = false;
+                int places = 1;
+                int moves = 1;
+                switch(option)
+                {
+                case 0: // '\0'
+                    or = true;
+                    break;
+
+                case 1: // '\001'
+                    skip = true;
+                    break;
+
+                case 3: // '\003'
+                    places = 0;
+                    moves = 2;
+                    break;
+                }
+                return new GameState(places, moves, or, skip);
+            }
+
+        };
+        GOLDENROD = new Draft("GOLDENROD", 6, 1, true, false) {
+
+            public GameState getStateForOption(int option)
+            {
+                boolean or = false;
+                int places = 1;
+                int moves = 1;
+                switch(option)
+                {
+                case 0: // '\0'
+                    or = true;
+                    break;
+
+                case 3: // '\003'
+                    places = 0;
+                    moves = 2;
+                    break;
+                }
+                return new GameState(places, moves, or, false);
+            }
+
+        };
+        HONEYDEW = new Draft("HONEYDEW", 7, 1, false);
+        IRIS = new Draft("IRIS", 8, 3);
+        JASPER = new Draft("JASPER", 9, 2, true, false, false, 20);
+        ENUM$VALUES = (new Draft[] {
+            AUBERGINE, BURGUNDY, CRIMSON, DANDELION, EVERGREEN, FUCHSIA, GOLDENROD, HONEYDEW, IRIS, JASPER
+        });
+    }
+}

@@ -1,0 +1,66 @@
+// Decompiled by Jad v1.5.8e. Copyright 2001 Pavel Kouznetsov.
+// Jad home page: http://www.geocities.com/kpdus/jad.html
+// Decompiler options: packimports(3) 
+// Source File Name:   Utilities.java
+
+package org.picoctf.evergreen;
+
+import java.awt.Color;
+
+public class Utilities
+{
+
+    public Utilities()
+    {
+    }
+
+    public static Color getColorForTeam(int team)
+    {
+        switch(team)
+        {
+        case 0: // '\0'
+            return Color.blue;
+
+        case 1: // '\001'
+            return Color.red;
+
+        case 2: // '\002'
+            return Color.green;
+
+        case 3: // '\003'
+            return Color.orange;
+
+        case 4: // '\004'
+            return Color.magenta;
+
+        case 5: // '\005'
+            return Color.cyan;
+        }
+        return Color.black;
+    }
+
+    public static String getColorNameForTeam(int team)
+    {
+        switch(team)
+        {
+        case 0: // '\0'
+            return "blue";
+
+        case 1: // '\001'
+            return "red";
+
+        case 2: // '\002'
+            return "green";
+
+        case 3: // '\003'
+            return "orange";
+
+        case 4: // '\004'
+            return "magenta";
+
+        case 5: // '\005'
+            return "cyan";
+        }
+        return "black";
+    }
+}

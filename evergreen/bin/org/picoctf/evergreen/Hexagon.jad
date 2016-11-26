@@ -1,0 +1,73 @@
+// Decompiled by Jad v1.5.8e. Copyright 2001 Pavel Kouznetsov.
+// Jad home page: http://www.geocities.com/kpdus/jad.html
+// Decompiler options: packimports(3) 
+// Source File Name:   Hexagon.java
+
+package org.picoctf.evergreen;
+
+import java.awt.*;
+
+// Referenced classes of package org.picoctf.evergreen:
+//            Utilities
+
+public class Hexagon
+{
+
+    public Hexagon(int row, int col)
+    {
+        team = -1;
+        type = 0;
+        this.row = row;
+        this.col = col;
+        y = (int)((((double)row + 3.5D) - 0.5D * (double)col) * Math.sqrt(3D) * 20D) + 22;
+        if((col & 1) == 0)	// if col is even
+            x = 60 * (col / 2) + 20;
+        else
+            x = (int)(20D * (1.5D * (double)(col + 1) - 0.5D));
+    }
+
+    public void draw(Graphics g, int selType)
+    {
+        if(team != -1 || type == selType || selType < 0)
+            g.setColor(Utilities.getColorForTeam(team));
+        else
+        if(type != selType)
+        {
+            g.setColor(Color.gray);
+            filled = true;
+        }
+        Polygon p = new Polygon();
+        for(int i = 0; i < 6; i++)
+            p.addPoint((int)((double)(10 + x) + 20D * Math.cos(((double)i * 3.1415926535897931D) / 3D)), (int)((double)(10 + y) + 20D * Math.sin(((double)i * 3.1415926535897931D) / 3D)));
+
+        if(filled)
+            g.fillPolygon(p);
+        g.setColor(Color.black);
+        g.drawPolygon(p);
+        if(team == -1 && type != selType)
+            filled = false;
+    }
+
+    public Hexagon copy()
+    {
+        Hexagon h = new Hexagon(row, col);
+        h.team = team;
+        h.filled = filled;
+        h.type = type;
+        return h;
+    }
+
+    public String toString()
+    {
+        return (new StringBuilder("(")).append(row).append(", ").append(col).append(")").toString();
+    }
+
+    public final int row;
+    public final int col;
+    public final int y;
+    public final int x;
+    public int team;
+    public boolean filled;
+    public int type;
+    public static final int SIDE_LENGTH = 20;
+}

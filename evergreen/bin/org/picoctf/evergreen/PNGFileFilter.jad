@@ -1,0 +1,32 @@
+// Decompiled by Jad v1.5.8e. Copyright 2001 Pavel Kouznetsov.
+// Jad home page: http://www.geocities.com/kpdus/jad.html
+// Decompiler options: packimports(3) 
+// Source File Name:   PNGFileFilter.java
+
+package org.picoctf.evergreen;
+
+import java.io.File;
+import javax.swing.filechooser.FileFilter;
+
+public class PNGFileFilter extends FileFilter
+{
+
+    public PNGFileFilter()
+    {
+    }
+
+    public boolean accept(File file)
+    {
+        if(file.isDirectory())
+            return true;
+        String path = file.getAbsolutePath().toLowerCase();
+        return path.endsWith("png") && path.charAt(path.length() - "png".length() - 1) == '.';
+    }
+
+    public String getDescription()
+    {
+        return "PNG";
+    }
+
+    private static final String EXTENSION = "png";
+}

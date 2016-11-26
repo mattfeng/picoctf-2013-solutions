@@ -1,0 +1,113 @@
+// Decompiled by Jad v1.5.8e. Copyright 2001 Pavel Kouznetsov.
+// Jad home page: http://www.geocities.com/kpdus/jad.html
+// Decompiler options: packimports(3) 
+// Source File Name:   Crackme2.java
+
+import java.io.PrintStream;
+import java.util.Scanner;
+
+public class Crackme2
+{
+
+    public Crackme2()
+    {
+    }
+
+    public static void main(String args[])
+    {
+        System.out.println("Please enter the password:");
+        Scanner scanner = new Scanner(System.in);
+        String s = scanner.next();
+        if(s.length() != 16)
+        {
+            System.out.println("Wrong");
+            return;
+        }
+        char ac[] = s.toCharArray();
+        if(ac[0] != 'i')
+        {
+            System.out.println("Wrong");
+            return;
+        }
+        if(ac[1] != 'T')
+        {
+            System.out.println("Wrong");
+            return;
+        }
+        if(ac[2] != '6')
+        {
+            System.out.println("Wrong");
+            return;
+        }
+        if(ac[3] != 'c')
+        {
+            System.out.println("Wrong");
+            return;
+        }
+        if(ac[4] != 'h')
+        {
+            System.out.println("Wrong");
+            return;
+        }
+        if(ac[5] != 'i')
+        {
+            System.out.println("Wrong");
+            return;
+        }
+        if(ac[6] != 'w')
+        {
+            System.out.println("Wrong");
+            return;
+        }
+        if(ac[7] != 'e')
+        {
+            System.out.println("Wrong");
+            return;
+        }
+        if(ac[8] != 'T')
+        {
+            System.out.println("Wrong");
+            return;
+        }
+        if(ac[9] != 'o')
+        {
+            System.out.println("Wrong");
+            return;
+        }
+        if(ac[10] != 'h')
+        {
+            System.out.println("Wrong");
+            return;
+        }
+        if(ac[11] != 'y')
+        {
+            System.out.println("Wrong");
+            return;
+        }
+        if(ac[12] != '4')
+        {
+            System.out.println("Wrong");
+            return;
+        }
+        if(ac[13] != 'o')
+        {
+            System.out.println("Wrong");
+            return;
+        }
+        if(ac[14] != 'o')
+        {
+            System.out.println("Wrong");
+            return;
+        }
+        if(ac[15] != 't')
+        {
+            System.out.println("Wrong");
+            return;
+        } else
+        {
+            System.out.print("Correct, your key is: ");
+            System.out.println(s);
+            return;
+        }
+    }
+}
